@@ -25,13 +25,13 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.toast
 import java.lang.Exception
 import java.util.*
-import java.util.jar.Manifest
 
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     lateinit var gMap: GoogleMap
     lateinit var fusedLocationClient: FusedLocationProviderClient
-    lateinit var selectedLocation: LatLng
+    val LOCATION_REQUEST_CODE = 123
+    val CAMERA_ZOOM_LEVEL = 14f
 
     lateinit var geofencingClient: GeofencingClient
 
@@ -39,6 +39,11 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     val GEOFENCE_RADIUS = 500
     val GEOFENCE_EXPIRATION = 120 * 24 * 60 * 60 * 1000
     val GEOFENCE_DWELL_DELAY = 2 * 60 * 1000
+    val GEOFENCE_LOCATION_REQUEST_CODE = 12345
+    lateinit var geofenceReminder: Reminder
+
+    lateinit var selectedLocation: LatLng
+    var selectedLocationAddress = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +51,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
         (map_fragment as SupportMapFragment).getMapAsync(this)
 
-        geofencingClient = LocationServices.getGeofencingClient(this)
+        geofencingClient = LocationServices.getGeofencingClient(applicationContext)
 
         // TODO: map stuff
 
@@ -64,16 +69,15 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 return@setOnClickListener
             }
 
-            // dummy
             val reminder = Reminder(
-                uId = null,
+                uid = null,
                 time = null,
                 location = String.format(
                     "%.3f,%.3f",
                     selectedLocation.latitude,
-                    selectedLocation.latitude
-                ), // "65.059640\n25.466246",
-                message = "test"
+                    selectedLocation.longitude
+                ),
+                message = reminderText
             )
 
             doAsync {
@@ -81,10 +85,12 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                     Room.databaseBuilder(applicationContext, AppDatabase::class.java, "reminders")
                         .build()
 
-                val uId = db.reminderDao().insert(reminder).toInt()
-                reminder.uId = uId
+                //val uid = db.reminderDao().insert(reminder).toInt()
+                // reminder.uid = uid
+                reminder.uid = 1
                 db.close()
-                createGeofence(selectedLocation.reminder, geofencingClient)
+                createGeofence(selectedLocation, reminder, geofencingClient)
+                toast("Reminder created")
             }
 
             finish()
@@ -109,8 +115,9 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             GeofencingRequest.Builder().setInitialTrigger(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .addGeofence(geofence).build()
 
-        val intent = Intent(this, GeofenceReceiver::class.java).putExtra("uId", reminder.uId)
-            .putExtra("message", reminder.uId)
+        val intent = Intent(this, GeofenceReceiver::class.java)
+            .putExtra("uId", reminder.uid)
+            .putExtra("message", reminder.uid)
             .putExtra("location", reminder.location)
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -128,7 +135,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        if (requestCode == 123) {
+        if (requestCode == LOCATION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_DENIED ||
                         grantResults[1] == PackageManager.PERMISSION_DENIED
                         )
@@ -178,7 +185,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.requestPermissions(
                 this,
                 permission.toTypedArray(),
-                123
+                LOCATION_REQUEST_CODE
             )
         }
 
@@ -203,14 +210,9 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 marker.showInfoWindow()
 
                 addCircle(
-                    CircleOptions().center(location).strokeColor(
-                        Color.argb(
-                            50,
-                            70,
-                            70,
-                            70
-                        )
-                    ).fillColor(Color.argb(100, 150, 150, 150))
+                    CircleOptions().center(location)
+                        .strokeColor(Color.argb(50, 70, 70, 70))
+                        .fillColor(Color.argb(100, 150, 150, 150))
                 )
                 selectedLocation = location
             }

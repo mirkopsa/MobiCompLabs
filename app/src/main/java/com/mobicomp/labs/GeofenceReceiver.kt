@@ -8,12 +8,15 @@ import com.google.android.gms.location.GeofencingEvent
 
 class GeofenceReceiver {
 
-    override fun onReceive(context: Context?, intent: Intent) {
+    // override fun onReceive(context: Context, intent: Intent) {
+    fun onReceive(context: Context, intent: Intent) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
         val geofencingTransition = geofencingEvent.geofenceTransition
 
-        if(geofencingTransition == Geofence.GEOFENCE_TRANSITION_ENTER || geofencingTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
-            var uId = intent!!.getIntExtra("uId", 0)
+        if (geofencingTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
+            geofencingTransition == Geofence.GEOFENCE_TRANSITION_DWELL
+        ) {
+            var uid = intent!!.getIntExtra("uid", 0)
             var text = intent.getStringExtra("message")
 
             MainActivity.showNotification(context!!, text)

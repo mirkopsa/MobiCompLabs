@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Message
+import android.util.Log
 import androidx.room.Room
 import kotlinx.android.synthetic.main.activity_time.*
 import org.jetbrains.anko.doAsync
@@ -29,11 +29,14 @@ class TimeActivity : AppCompatActivity() {
                 timePicker.currentMinute
             )
 
+            Log.d("LAB7", "picked year " + datePicker.year)
+            Log.d("LAB7", "picked month " + datePicker.month)
+
             if ((editTextMessage.text.toString() != "") &&
                 (calendar.timeInMillis > System.currentTimeMillis())) {
 
                 val reminder = Reminder(
-                    uId = null,
+                    uid = null,
                     time = calendar.timeInMillis,
                     location = null,
                     message = editTextMessage.text.toString()
@@ -71,7 +74,9 @@ class TimeActivity : AppCompatActivity() {
         val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         manager.setExact(AlarmManager.RTC, time, pendingIntent)
 
-        runOnUiThread(toast("Reminder created"))
+        runOnUiThread{
+            toast("Reminder created")
+        }
 
     }
 

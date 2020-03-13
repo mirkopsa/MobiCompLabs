@@ -12,7 +12,7 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
 
         // Retrieve data from intent
-        val uId = intent.getIntExtra("uId", 0)
+        val uid = intent.getIntExtra("uid", 0)
         val text = intent.getStringExtra("message")
 
         // TODO: Implement trigger event (e.g. notification)
